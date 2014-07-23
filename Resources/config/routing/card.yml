@@ -1,0 +1,13 @@
+ek_stripe_payment_card:
+    path:     /
+    defaults: { _controller: "EkStripePaymentBundle:Stripe:index" }
+
+ek_stripe_payment_card_create:
+    path:     /charge
+    defaults: { _controller: "EkStripePaymentBundle:Stripe:create" }
+    requirements: { _method: post }
+
+ek_stripe_payment_card_plan:
+    path:     /plan
+    defaults: { _controller: "EkStripePaymentBundle:Stripe:createPlan" }
+    requirements: { _method: post|get }

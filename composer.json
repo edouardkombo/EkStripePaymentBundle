@@ -1,0 +1,28 @@
+{
+    "name": "edouardkombo/ek-stripe-payment-bundle",
+    "type": "bundle",
+    "description": "Most advanced Stripe payment bundle for Symfony2.",
+    "keywords": ["Ek stripe payment bundle","EkStripePaymentBundle","Stripe bundle","Stripe","Stripe php"],
+    "homepage": "https://github.com/edouardkombo/EkStripePaymentBundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Edouard Kombo",
+            "email": "edouard.kombo@gmail.com",
+            "homepage": "http://creativcoders.wordpress.com",
+            "role": "Developer"
+        }
+    ],    
+    "require": {
+        "php": ">=5.3.0",
+        "edouardkombo/ek-api-caller-bundle": "dev-master",
+        "edouardkombo/php-objects-contract-bundle": "dev-master"
+    },
+    "autoload": {
+        "psr-0": {
+            "EdouardKombo\\EkStripePaymentBundle\\": ""
+        }
+    },
+    "target-dir":"EdouardKombo/EkStripePaymentBundle",      
+    "minimum-stability": "dev"    
+}
