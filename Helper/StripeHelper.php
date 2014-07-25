@@ -15,7 +15,7 @@
  */
 namespace EdouardKombo\EkStripePaymentBundle\Helper;
 
-use EdouardKombo\EkStripePaymentBundle\Exception\StripeException;
+use EdouardKombo\EkStripePaymentBundle\Entity\User;
 
 /**
  * Stripe helper methods, and base class
@@ -38,20 +38,36 @@ class StripeHelper
      *
      * @var object
      */
+    public $securityContext;
+    
+    /**
+     *
+     * @var object
+     */
+    public $em;     
+    
+    /**
+     *
+     * @var object
+     */
     public $firewall;     
     
     
     /**
      * Constructor
      * 
-     * @param \EduardKombo\EkStripePaymentBundle\Contract\SetGetContract   $setGetContract setGetContract object
-     * @param array                                                        $params         Ek Stripe Payment parameters
-     * @param \EduardKombo\EkStripePaymentBundle\Contract\FirewallContract $firewall       Firewall contract
+     * @param \EduardKombo\EkStripePaymentBundle\Contract\SetGetContract   $setGetContract  setGetContract object
+     * @param array                                                        $params          Ek Stripe Payment parameters
+     * @param \EduardKombo\EkStripePaymentBundle\Contract\FirewallContract $firewall        Firewall contract
+     * @param SecurityContext                                              $securityContext Manage security
+     * @param dobject                                                      $doctrineOrm     Doctrine Orm 
      */
-    public function __construct($setGetContract, $params, $firewall)
+    public function __construct($setGetContract, $params, $firewall, $securityContext, $doctrineOrm)
     {
         $this->firewall         = $firewall;
         $this->setGetContract   = $setGetContract;
+        $this->securityContext  = $securityContext;
+        $this->em               = $doctrineOrm;
         
         $this->setGetContract->cursor   = 'currentEnvironment';
         $this->setGetContract->set($params['current_environment']);
@@ -112,5 +128,94 @@ class StripeHelper
         ];        
         $this->setGetContract->cursor   = 'headers';
         $this->setGetContract->set($headers);                  
+    }
+    
+    
+    /**
+     * Return stripe user id in local database
+     * 
+     * @return mixed
+     */
+    public function getStripeUserId()
+    {
+        $user       = $this->securityContext->getToken()->getUser();        
+        $userId     = $user->getId();
+        
+        $stripe     = $this->em->getRepository('EkStripePaymentBundle:User')
+                ->findOneByUser($userId);
+        
+        if (!$stripe) {
+            $result = false;
+        } else {
+            $result = $stripe->getStripeUserId();
+        }
+        
+        return $result;
+    }
+    
+    
+    /**
+     * Receive Stripe UserId from Stripe Api
+     * 
+     * @param array  $request        Requeest received from Stripe Api
+     * @param string $customerId     Current customerId
+     * @param string $stripeProperty Stripe property to call
+     * 
+     * @return mixed
+     */
+    public function receiveStripeUserId($request, $customerId, $stripeProperty)
+    {
+        if (($stripeProperty === 'customersApiUrl')) {
+            $result = (isset($request['id'])) ? $request['id'] : $customerId;
+        } else {
+            $result = false;
+        }
+        
+        return $result;
+    }    
+    
+    
+    /**
+     * Set Stripe user id linked to current user
+     * 
+     * @return mixed
+     */
+    public function setStripeUserId($userId)
+    {
+        $user       = $this->securityContext->getToken()->getUser();  
+        $entity     = new User();
+        
+        $entity->setStripeUserId($userId);
+        $entity->setUser($user);
+        $this->em->persist($entity);
+        $this->flush(); 
+        
+        return true;
+    }    
+    
+    
+    /**
+     * Return correct url without params to dispatch to cUrl
+     * 
+     * @param string $property SetGetContract property
+     * 
+     * @return string
+     */
+    public function getUrlWithoutParams($property)
+    {
+        $customersApiUrl    = $this->setGetContract->customersApiUrl;
+        $stripeUserId       = $this->getStripeUserId();
+        
+        switch($property) {
+            case 'subscriptionsApiUrl':
+                $this->firewall->isStripeUserValid($stripeUserId);
+                $result = $customersApiUrl."/$stripeUserId/subscriptions";
+                break;
+            default:
+                $result = $this->setGetContract->{$property};
+                break;
+        }
+        
+        return $result;        
     }
 }

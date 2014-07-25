@@ -2,10 +2,7 @@
 
 namespace EdouardKombo\EkStripePaymentBundle\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-
-use EdouardKombo\EkStripePaymentBundle\Entity\User;
 
 /**
  * Stripe controller.
@@ -19,16 +16,56 @@ class StripeController extends Controller
      * @var string
      */
     protected $customerId;
+    
+    /**
+     *
+     * @var string
+     */
+    protected $currency;
+    
+    /**
+     *
+     * @var array
+     */
+    protected $datas;
+    
+    /**
+     *
+     * @var object
+     */
+    protected $helper;
+    
+    /**
+     *
+     * @var string
+     */
+    protected $stripeProperty;
+    
+    /**
+     *
+     * @var object
+     */
+    protected $container;     
+    
 
+    /**
+     * 
+     * @param object $container Service container
+     */
+    public function __construct($container)
+    {
+        $this->container = $container;        
+    }
+    
     /**
      * Lists all Card entities.
      *
      */
     public function indexAction()
     {       
-        $em = $this->getDoctrine()->getManager();
+        $em     = $this->getDoctrine()->getManager();
 
-        $helper = $this->get('ek_stripe_payment.helper.stripe');
+        $helper = $this->container->get('ek_stripe_payment.helper.stripe');
         $setGetContract = $helper->setGetContract;
         
         $entities = $em->getRepository('EkStripePaymentBundle:User')->findAll();
@@ -36,29 +73,71 @@ class StripeController extends Controller
         return $this->render('EkStripePaymentBundle:User:index.html.twig', array(
             'entities'      => $entities,
             'checkout_url'  => $setGetContract->apiCheckoutUrl,
-            'user_email'    => $this->getUser()->getEmail(),
+            'user_email'    => $this->container->getUser()->getEmail(),
             'currency'      => $setGetContract->defaultCurrency,
             'api_key'       => $setGetContract->publishableApiKey
         ));
     }
     
+    /**
+     * Creates a new Card entity.
+     *
+     */
+    public function createAction()
+    {
+        $this->helper           = $this->container->get('ek_stripe_payment.helper.stripe');        
+        $this->customerId       = $this->helper->getStripeUserId();
+        $this->stripeProperty   = $this->container->get('request')->get('type');
+        
+        $this->dispatchSubActions();            
+
+        return $this->render('EkStripePaymentBundle:User:new.html.twig');
+    }
+    
+    /**
+     * Dispatch corresponding actions
+     * 
+     */
+    private function dispatchSubActions()
+    {   
+        switch($this->stripeProperty) {
+            case 'subscriptionsApiUrl':
+                $subscription   = $this->container->get('request')->get($this->stripeProperty);
+                if (!empty($subscription)) {
+                    $this->stripeSubscriptionsAction();
+                }
+                break;
+                
+            case 'customersApiUrl':
+                if (!$this->customerId) {
+                    $this->stripeCustomersAction();
+                    $this->helper->setStripeUserId($this->customerId);               
+                }                
+                break;
+            case 'chargesApiUrl':
+                if (!$this->customerId) {
+                    $this->stripeCustomersAction();
+                    $this->helper->setStripeUserId($this->customerId);               
+                }
+                $this->stripeChargesAction();
+                break;
+        }
+    }
     
     /**
      * Create stripe plan
      * 
      * @return mixed
      */
-    public function createPlanAction()
+    public function stripePlansAction()
     {
-        $request        = $this->getRequest();
+        $amount         = $this->container->get('request')->get('amount');
+        $interval       = $this->container->get('request')->get('interval');        
+        $name           = $this->container->get('request')->get('name');
+        $currency       = $this->container->get('request')->get('currency');        
+        $id             = $this->container->get('request')->get('id');
         
-        $amount         = $request->get('amount');
-        $interval       = $request->get('interval');        
-        $name           = $request->get('name');
-        $currency       = $request->get('currency');        
-        $id             = $request->get('id');
-        
-        $datas = [
+        $this->datas = [
             "amount"    => $amount,
             "interval"  => $interval,
             "name"      => $name,
@@ -66,125 +145,82 @@ class StripeController extends Controller
             "id"        => $id            
         ];
         
-        return $this->sendRequest($datas, 'plansApiUrl');          
+        return $this->sendStripeRequest();          
     }
     
     /**
      * Create a stripe customer and/or subscribes him to a plan
      * 
-     * @param \Symfony\Component\HttpFoundation\Request $request request object
-     * @param string                                    $plan    Plan to subscribe to
+     * @return mixed
+     */
+    public function stripeCustomersAction()
+    {
+        $stripeToken        = $this->container->get('request')->get('stripeToken');
+        $stripeUserEmail    = $this->container->get('request')->get('stripeEmail');       
+        
+        $this->datas = [
+            "card"          => $stripeToken,
+            "email"         => $stripeUserEmail,
+            "description"   => 'User wrapper'            
+        ];                
+
+        return $this->sendStripeRequest();          
+    }
+    
+    /**
+     * Create a stripe customer and/or subscribes him to a plan
      * 
      * @return mixed
      */
-    public function createCustomerAction(Request $request)
+    public function stripeSubscriptionsAction()
     {
-        $stripeToken        = $request->get('stripeToken');
-        $stripeUserEmail    = $request->get('stripeEmail');       
-        $plan               = $request->get('plan');
-        
-        if (isset($plan) && !empty($plan)) {
-            $datas = [
-                "card"          => $stripeToken,
-                "email"         => $stripeUserEmail,
-                "plan"          => $plan
-            ];            
-        } else {
-            $datas = [
-                "card"          => $stripeToken,
-                "email"         => $stripeUserEmail,
-                "description"   => 'Useer wrapper'            
-            ];            
-        }
+        $this->datas = [
+            "plan"          => $this->container->get('request')->get('plan')
+        ];                
 
-        return $this->sendRequest($datas, 'customersApiUrl');          
-    }
+        return $this->sendStripeRequest();          
+    }    
     
     /**
      * Create a charge
      * 
      * @return mixed
      */
-    private function createChargeAction()
+    private function stripeChargesAction()
     {
-        $helper         = $this->get('ek_stripe_payment.helper.stripe');
+        $helper         = $this->container->get('ek_stripe_payment.helper.stripe');
         $setGetContract = $helper->setGetContract;
+        $amount         = $this->container->get('request')->get('amount');
         
-        $amount         = $this->getrequest()->get('amount');
-        
-        if (!empty($amount)) {
-            $datas = [
-                'amount'        => $amount,
-                'currency'      => $setGetContract->defaultCurrency,
-                'customer'      => $this->customerId,        
-            ];        
-
-            return $this->sendRequest($datas, 'chargesApiUrl');
-            
-        } else {
-            
+        if (empty($amount)) {
             return false;
         }
+        
+        $this->datas = [
+            'amount'        => $amount,
+            'currency'      => $setGetContract->defaultCurrency,
+            'customer'      => $this->customerId,        
+        ];        
+
+        $this->sendStripeRequest();
     }    
     
     /**
-     * Send the request via cUrl
+     * Call communication contract to send the request
      * 
-     * @param array  $datas Datas sent by url
-     * @param string $type  Url type
+     * @return boolean
      */
-    private function sendRequest($datas, $type)
+    private function sendStripeRequest()
     {
-        $helper         = $this->get('ek_stripe_payment.helper.stripe');
-        $setGetContract = $helper->setGetContract;
-        $firewall       = $helper->firewall;
+        $communication = $this->container->get('ek_stripe_payment.contract.communication');
+        $communication->curl = $this->container->get('ek_api_caller.contract.http');
+        $communication->stripeProperty = $this->stripeProperty;
+        $communication->curlDatas      = $this->datas;
+        $communication->customerId     = $this->customerId;
+        $id = $communication->send();
         
-        $curl           = $this->get('ek_api_caller.contract.http');
-        
-        $curl->setParameter('url',     $setGetContract->{$type});      
-        $curl->setParameter('headers', $setGetContract->headers);       
-        $curl->setParameter('datas',   $datas);        
-        $request = $curl->post();
-        
-        $firewall->handleStripeError($request[0], $request[1]);
-        
-        if (($type === 'customersApiUrl')) {
-            $this->customerId = (isset($request[0]['id'])) ? 
-                    $request[0]['id'] : $this->customerId;
-        }
+        $this->customerId = (false === $id) ?  $this->customerId : $id;
         
         return true;
-    }
-    
-    /**
-     * Creates a new Card entity.
-     *
-     */
-    public function createAction(Request $request)
-    {
-        $user   = $this->get('security.context')->getToken()->getUser();        
-        $userId = $user->getId();
-        
-        $em     = $this->getDoctrine()->getManager();
-        $entity = $em->getRepository('EkStripePaymentBundle:User')
-                ->findOneByUser($userId);        
-        
-        if (!$entity) {
-            $this->createCustomerAction($request);
-            
-            $entity = new User();
-            $entity->setStripeUserId($this->customerId);
-            $entity->setUser($user);
-            $em->persist($entity);
-            $em->flush();            
-            
-        } else {
-            $this->customerId = $entity->getStripeUserId();
-            $this->createCustomerAction($request);
-        }
-        
-        $this->createChargeAction();      
-
-        return $this->render('EkStripePaymentBundle:User:new.html.twig');
-    }
+    }    
 }

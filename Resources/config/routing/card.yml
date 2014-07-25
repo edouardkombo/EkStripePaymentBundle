@@ -9,5 +9,5 @@ ek_stripe_payment_card_create:
 
 ek_stripe_payment_card_plan:
     path:     /plan
-    defaults: { _controller: "EkStripePaymentBundle:Stripe:createPlan" }
+    defaults: { _controller: "EkStripePaymentBundle:Stripe:stripePlan" }
     requirements: { _method: post|get }

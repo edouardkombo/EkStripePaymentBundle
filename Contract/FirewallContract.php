@@ -97,4 +97,21 @@ class FirewallContract extends FirewallAbstractions
                throw new StripeException('General API Error: '.$errorMessage);
        }        
     }
+    
+    /**
+     * Check if stripe user id is valid
+     * 
+     * @param mixed $user Stripe user id retrieved from database
+     * 
+     * @return boolean
+     * @throws StripeException
+     */
+    public function isStripeUserValid($user)
+    {
+        if (false === $user) {
+            throw new StripeException("Invalid Stripe User id from database !");
+        }
+        
+        return true;
+    }
 }

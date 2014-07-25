@@ -39,7 +39,31 @@ class CommunicationContract extends CommunicationAbstractions
      *
      * @var \EdouardKombo\EkStripePaymentBundle\Helper\StripeHelper
      */
-    public $helper;    
+    public $helper;
+    
+    /**
+     *
+     * @var object Curl service
+     */
+    public $curl;
+    
+    /**
+     *
+     * @var array Curl datas
+     */
+    public $curlDatas;
+    
+    /**
+     *
+     * @var string
+     */
+    public $customerId;    
+    
+    /**
+     *
+     * @var string Stripe property to target
+     */
+    public $stripeProperty;     
     
     /**
      * Constructor
@@ -76,7 +100,22 @@ class CommunicationContract extends CommunicationAbstractions
      * @return mixed
      */
     public function send()
-    {       
+    {
+        $setGetContract = $this->helper->setGetContract;
+        $firewall       = $this->helper->firewall;
+        
+        $url    = $this->helper->getUrlWithoutParams($this->stripeProperty);
+        
+        $this->curl->setParameter('url',     $url); 
+        $this->curl->setParameter('headers', $setGetContract->headers);       
+        $this->curl->setParameter('datas',   $this->curlDatas);            
+
+        $request        = $this->curl->post();
+        
+        $firewall->handleStripeError($request[0], $request[1]);
+        
+        return $this->helper->receiveStripeUserId($request[0], $this->customerId, 
+                $this->stripeProperty);        
     }
     
     /**
