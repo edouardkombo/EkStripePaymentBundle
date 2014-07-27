@@ -85,8 +85,8 @@ class StripeHelper
             $publishableKey = $this->setGetContract->environmentsLivePublishable;
         }
         
-        $this->setGetContract->setProperties('secretApiKey', $secretKey);
-        $this->setGetContract->setProperties('publishableApiKey', $publishableKey);
+        $this->setGetContract->setParameter('secretApiKey', $secretKey);
+        $this->setGetContract->setParameter('publishableApiKey', $publishableKey);
         $this->setHeaders($secretKey);               
     }
     
@@ -112,7 +112,7 @@ class StripeHelper
             'Stripe-Version: '                . $apiVersion
         ];
         
-        $this->setGetContract->setProperties('headers', $headers);       
+        $this->setGetContract->setParameter('headers', $headers);       
     }    
     
     
@@ -177,30 +177,4 @@ class StripeHelper
         
         return true;
     }    
-    
-    
-    /**
-     * Return correct url without params to dispatch to cUrl
-     * 
-     * @param string $property SetGetContract property
-     * 
-     * @return string
-     */
-    public function getUrlWithoutParams($property)
-    {
-        $customersApiUrl    = $this->setGetContract->customersApiUrl;
-        $stripeUserId       = $this->getStripeUserId();
-        
-        switch($property) {
-            case 'subscriptionsApiUrl':
-                $this->firewall->isStripeUserValid($stripeUserId);
-                $result = $customersApiUrl."/$stripeUserId/subscriptions";
-                break;
-            default:
-                $result = $this->setGetContract->{$property};
-                break;
-        }
-        
-        return $result;        
-    }
 }

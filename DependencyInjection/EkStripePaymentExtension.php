@@ -41,7 +41,7 @@ class EkStripePaymentExtension extends Extension
                 }
             }
         }
-        
+
         $container->setParameter('ek_stripe_payment.params', $params);
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));

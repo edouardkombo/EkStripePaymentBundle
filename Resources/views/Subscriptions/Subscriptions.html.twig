@@ -1,17 +1,17 @@
-<form action="{{ path(stripe-form-action-url) }}" method="POST">
+<form action="{{ path(stripe_form_action_url) }}" method="POST">
     <script
-      src="{{ stripe-checkout-url }}" class="stripe-button"
-      data-key="{{ stripe-api-key }}"
+      src="{{ stripe_checkout_url }}" class="stripe-button"
+      data-key="{{ stripe_api_key }}"
       data-image="/square-image.png"
-      data-email="{{ stripe-user-email }}"
-      data-currency="{{ stripe-currency }}"
-      data-name="{{ stripe-data-name }}"
-      data-description="{{ stripe-data-description }} ({{ stripe-currency }}{{ stripe-normal-data-amount }})"
-      data-panel-label="{{ stripe-data-panel-label }}"
-      data-label="{{ stripe-data-label }} {{ stripe-currency }}{{ stripe-normal-data-amount }}"
-      data-amount="{{ stripe-data-amount }}">
+      data-email="{{ stripe_user_email }}"
+      data-currency="{{ stripe_currency }}"
+      data-name="{{ stripe_data_name }}"
+      data-description="{{ stripe_data_description }} ({{ stripe_currency_letter }}{{ stripe_normal_data_amount }})"
+      data-panel-label="{{ stripe_data_panel_label }}"
+      data-label="{{ stripe_data_label }} {{ stripe_currency_letter }}{{ stripe_normal_data_amount }}"
+      data-amount="{{ stripe_data_amount }}">
     </script>
     <input type='hidden' id="method" name="method" value="add">     
     <input type='hidden' id="action" name="action" value="Subscriptions">
-    <input type='hidden' id='plan' name='plan' value='{{ stripe-plan-id }}'>    
+    <input type='hidden' id='plan' name='plan' value='{{ stripe_plan_id }}'>    
 </form>

@@ -27,28 +27,32 @@ class StripeController extends Controller
         $helper         = $this->get('ek_stripe_payment.helper.stripe');
         $setGetContract = $helper->setGetContract;
         
+        $user           = $this->get('security.context')->getToken()->getUser();
+        $userMail       = $user->getEmail();
+        
         $amount         = 25;
         $stripeAmount   = $amount * 100;
         
         return $this->render('EkStripePaymentBundle::examples.html.twig', array(
-            'stripe-checkout-url'      => $setGetContract->apiCheckoutUrl,
-            'stripe-user-email'        => $this->getUser()->getEmail(),
-            'stripe-form-action-url'   => 'ek_stripe_payment_card_create',
-            'stripe-data-name'         => 'My company',
-            'stripe-data-description'  => 'Payment test ',
-            'stripe-data-panel-label'  => 'Instant payment',
-            'stripe-data-label'        => 'Instant payment',
-            'stripe-plan-interval'     => 'month',
-            'stripe-plan-name'         => 'Test plan description',
-            'stripe-plan-id'           => 'Silver',
-            'stripe-coupons-id'        => '20percent', 
-            'stripe-coupons-percent'   => '25',
-            'stripe-coupons-duration'  => 'repeated',
-            'stripe-coupons-durationIM'=> 2,            
-            'stripe-data-amount'       => $stripeAmount,
-            'stripe-normal-data-amount'=> $amount,            
-            'stripe-currency'          => $setGetContract->defaultCurrency,
-            'stripe-api-key'           => $setGetContract->publishableApiKey
+            'stripe_checkout_url'      => $setGetContract->apiCheckout,
+            'stripe_user_email'        => $userMail,
+            'stripe_form_action_url'   => 'ek_stripe_payment_card_create',
+            'stripe_data_name'         => 'My company',
+            'stripe_data_description'  => 'Payment test ',
+            'stripe_data_panel_label'  => 'Instant payment',
+            'stripe_data_label'        => 'Instant payment',
+            'stripe_plan_interval'     => 'month',
+            'stripe_plan_name'         => 'Test plan description',
+            'stripe_plan_id'           => 'Silver',
+            'stripe_coupons_id'        => '20percent', 
+            'stripe_coupons_percent'   => '25',
+            'stripe_coupons_duration'  => 'repeated',
+            'stripe_coupons_durationIM'=> 2,            
+            'stripe_data_amount'       => $stripeAmount,
+            'stripe_normal_data_amount'=> $amount,            
+            'stripe_currency'          => $setGetContract->defaultCurrency,
+            'stripe_currency_letter'   => '€',
+            'stripe_api_key'           => $setGetContract->publishableApiKey
         ));
     }
     
@@ -62,7 +66,7 @@ class StripeController extends Controller
         $action         = $this->get('request')->get('action');
         $serviceName    = "ek_stripe_payment.controller.stripe.$method";
         $targetedMethod = $method.$action."Action";
-
+        
         $this->helper           = $this->get('ek_stripe_payment.helper.stripe');        
         $this->customerId       = $this->helper->getStripeUserId();        
         
