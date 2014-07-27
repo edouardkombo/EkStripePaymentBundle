@@ -51,7 +51,7 @@ class SetGetContract extends SetGetAbstractions
      *
      * @var string
      */
-    public $currentEnvironment = '';
+    public $defaultEnvironment = '';
     
     /**
      *
@@ -69,43 +69,115 @@ class SetGetContract extends SetGetAbstractions
      *
      * @var string
      */
-    public $chargesApiUrl = ''; 
+    public $subUrlsCharges = ''; 
     
     /**
      *
      * @var string
      */
-    public $invoicesApiUrl = '';
+    public $subUrlsInvoices = '';
     
     /**
      *
      * @var string
      */
-    public $plansApiUrl = '';
+    public $subUrlsCoupons = '';    
     
     /**
      *
      * @var string
      */
-    public $subscriptionsApiUrl = '';
+    public $subUrlsPlans = '';
     
     /**
      *
      * @var string
      */
-    public $customersApiUrl = '';    
+    public $subUrlsSubscriptions = '';
     
     /**
      *
      * @var string
      */
-    public $apiCheckoutUrl = '';
+    public $subUrlsCustomers = '';    
+    
+    /**
+     *
+     * @var string
+     */
+    public $apiCheckout = '';
     
     /**
      *
      * @var string
      */
     public $apiVersion = '';
+    
+    /**
+     *
+     * @var string
+     */
+    public $environmentsTest = ''; 
+    
+    /**
+     *
+     * @var string
+     */
+    public $environmentsLive = ''; 
+    
+     /**
+     *
+     * @var string
+     */
+    public $environmentsTestSecret = ''; 
+    
+    /**
+     *
+     * @var string
+     */
+    public $environmentsTestPublishable = ''; 
+    
+     /**
+     *
+     * @var string
+     */
+    public $environmentsLiveSecret = ''; 
+    
+    /**
+     *
+     * @var string
+     */
+    public $environmentsLivePublishable = '';
+    
+    /**
+     *
+     * @var string
+     */
+    public $urlToRequest = '';  
+    
+    /**
+     *
+     * @var string
+     */
+    public $datasToRequest = ''; 
+    
+    /**
+     *
+     * @var string
+     */
+    public $methodToRequest = ''; 
+    
+    /**
+     *
+     * @var string
+     */
+    public $customerId = '';
+    
+    /**
+     *
+     * @var string
+     */
+    public $currentSubUrl = '';     
 
     /**
      *
@@ -129,6 +201,22 @@ class SetGetContract extends SetGetAbstractions
     {
         $this->firewall = $firewall;
     }
+    
+    /**
+     * Check if property exists and set the value to the property
+     * 
+     * @param string $property Property we want to reach
+     * @param mixed  $value    Value to assign to the property
+     * 
+     * @return \EdouardKombo\EkStripePaymentBundle\Contract\SetGetContract
+     */
+    public function setParameter($property, $value)
+    {
+        $this->cursor = $property;
+        $this->set($value);
+        
+        return $this;
+    }    
     
     /**
      * Set a value

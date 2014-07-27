@@ -22,22 +22,25 @@ class EkStripePaymentExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
         
-        $params         = array(
-            'api_url'                => $config['api_url'],
-            'customers_suburl'       => $config['customers_suburl'],             
-            'charges_suburl'         => $config['charges_suburl'], 
-            'subscriptions_suburl'   => $config['subscriptions_suburl'],
-            'plans_suburl'           => $config['plans_suburl'],
-            'invoices_suburl'        => $config['invoices_suburl'],            
-            'api_checkout_url'       => $config['api_checkout_url'],             
-            'current_environment'    => $config['current_environment'],
-            'default_currency'       => $config['default_currency'],
-            'api_version'            => $config['api_version'],              
-            'environments'           => array(
-                'test' => $config['test'], 
-                'live' => $config['live']
-            )
-        );
+        $params = array();
+        
+        //grab all configurations in camelCase
+        foreach ($config as $key => $val) {
+            
+            foreach($val as $k => $v) {
+                $keyNames = $key . ucfirst($k);
+                
+                if (is_array($v)) {
+                    foreach ($v as $result => $r) {
+                        $additionalKeyNames = $keyNames . ucfirst($result);
+                        $params[$additionalKeyNames] = $r;                        
+                    }
+                    
+                } else {
+                    $params[$keyNames] = $v;                   
+                }
+            }
+        }
         
         $container->setParameter('ek_stripe_payment.params', $params);
 

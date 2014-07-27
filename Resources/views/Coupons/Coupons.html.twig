@@ -1,0 +1,20 @@
+<form action="{{ path(stripe-form-action-url) }}" method="POST">
+    <script
+      src="{{ stripe-checkout-url }}" class="stripe-button"
+      data-key="{{ stripe-api-key }}"
+      data-image="/square-image.png"
+      data-email="{{ stripe-user-email }}"
+      data-currency="{{ stripe-currency }}"
+      data-name="{{ stripe-data-name }}"
+      data-description="{{ stripe-data-description }} ({{ stripe-currency }}{{ stripe-normal-data-amount }})"
+      data-panel-label="{{ stripe-data-panel-label }}"
+      data-label="{{ stripe-data-label }} {{ stripe-currency }}{{ stripe-normal-data-amount }}"
+      data-amount="{{ stripe-data-amount }}">
+    </script>
+    <input type='hidden' id="method" name="method" value="add">     
+    <input type='hidden' id="action" name="action" value="Subscriptions"> 
+    <input type='text' id="id" name="id" value="{{ stripe-coupons-id }}"> 
+    <input type='text' id="percent-off" name="percent-off" value="{{ stripe-coupons-percent }}"> 
+    <input type='text' id="duration" name="duration" value="{{ stripe-coupons-duration }}"> 
+    <input type='text' id="duration_in_month" name="duration_in_month" value="{{ stripe-coupons-durationIM }}">     
+</form>

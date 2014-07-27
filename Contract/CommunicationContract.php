@@ -43,55 +43,36 @@ class CommunicationContract extends CommunicationAbstractions
     
     /**
      *
+     * @var \EdouardKombo\EkStripePaymentBundle\Contract\SetGet
+     */
+    public $setGetContract;    
+    
+    /**
+     *
+     * @var \EdouardKombo\EkStripePaymentBundle\Contract\FirewallContract
+     */
+    public $firewall;    
+    
+    /**
+     *
      * @var object Curl service
      */
     public $curl;
-    
-    /**
-     *
-     * @var array Curl datas
-     */
-    public $curlDatas;
-    
-    /**
-     *
-     * @var string
-     */
-    public $customerId;    
-    
-    /**
-     *
-     * @var string Stripe property to target
-     */
-    public $stripeProperty;     
+   
     
     /**
      * Constructor
      * 
+     * @param \EdouardKommbo\EkApiCallerBundle\Contract\HttpContract  $curl   Curl object
      * @param \EdouardKombo\EkStripePaymentBundle\Helper\StripeHelper $helper Helper class
+     * @param \EdouardKommbo\EkStripePaymentBundle\Contract\FirewallContract      $firewall  Security
      */
-    public function __construct($helper)
+    public function __construct($curl, $helper, $firewall)
     {
-        $this->helper = $helper;
-    }
-    
-    
-    /**
-     * Check if property exists and set the value to the property
-     * 
-     * @param string $property Property we want to reach
-     * @param mixed  $value    Value to assign to the property
-     * 
-     * @return \EdouardKombo\EkStripePaymentBundle\Helper\StripeHelper
-     */
-    public function setParameter($property, $value)
-    {
-        $setGetContract = $this->helper->setGetContract;      
-        
-        $setGetContract->cursor = $property;
-        $setGetContract->set($value);
-        
-        return $this;
+        $this->curl             = $curl;
+        $this->helper           = $helper;
+        $this->setGetContract   = $this->helper->setGetContract;
+        $this->firewall         = $firewall;
     } 
     
     /**
@@ -101,21 +82,21 @@ class CommunicationContract extends CommunicationAbstractions
      */
     public function send()
     {
-        $setGetContract = $this->helper->setGetContract;
-        $firewall       = $this->helper->firewall;
+        $this->curl->setParameter('url',     $this->setGetContract->urlToRequest); 
+        $this->curl->setParameter('headers', $this->setGetContract->headers);       
+        $this->curl->setParameter('datas',   $this->setGetContract->datasToRequest);            
         
-        $url    = $this->helper->getUrlWithoutParams($this->stripeProperty);
+        $customerId         = $this->setGetContract->customerId;        
+        $methodToRequest    = $this->setGetContract->methodToRequest;
+        $currentSubUrl      = $this->setGetContract->currentSubUrl;
         
-        $this->curl->setParameter('url',     $url); 
-        $this->curl->setParameter('headers', $setGetContract->headers);       
-        $this->curl->setParameter('datas',   $this->curlDatas);            
-
-        $request        = $this->curl->post();
+        $this->httpResponse = $this->curl->{$methodToRequest}();
         
-        $firewall->handleStripeError($request[0], $request[1]);
+        $this->receive();
         
-        return $this->helper->receiveStripeUserId($request[0], $this->customerId, 
-                $this->stripeProperty);        
+        return $this->helper->receiveStripeUserId($this->httpResponse[0], 
+            $customerId, 
+            $currentSubUrl);        
     }
     
     /**
@@ -125,11 +106,9 @@ class CommunicationContract extends CommunicationAbstractions
      */
     public function receive()
     {
-        $firewall       = $this->helper->firewall;
-        
         $httpResponse   = $this->httpResponse[0];
         $httpCode       = $this->httpResponse[1];
         
-        return $firewall->handleStripeError($httpResponse, $httpCode);
+        return $this->firewall->handleStripeError($httpResponse, $httpCode);
     }   
 }

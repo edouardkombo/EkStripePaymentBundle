@@ -1,0 +1,22 @@
+{% extends '::base.html.twig' %}
+
+{% block body -%}
+    
+<h1>Instant payment example (Create a user if needed, save the user in database and charge amount)<br/>
+in dev mode, credit card number is "4242 4242 4242 4242"    </h1>
+{% include 'EkStripePaymentBundle:Customers:Customers.html.twig' %}    
+<br/><br/>
+
+<h1>Plans example (Create a plan that a customer could subscribe to)</h1>
+{% include 'EkStripePaymentBundle:Plans:Plans.html.twig' %}    
+<br/><br/>
+
+<h1>Subscriptions example (Attach customer to a plan. You need to create first, a customer and a plan)</h1>
+{% include 'EkStripePaymentBundle:Subscriptions:Subscriptions.html.twig' %}    
+<br/><br/>
+    
+<h1>Coupons example</h1>
+{% include 'EkStripePaymentBundle:Coupons:Coupons.html.twig' %}
+<br/><br/>
+
+{% endblock %}

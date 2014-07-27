@@ -56,63 +56,48 @@ class StripeHelper
     /**
      * Constructor
      * 
-     * @param \EduardKombo\EkStripePaymentBundle\Contract\SetGetContract   $setGetContract  setGetContract object
-     * @param array                                                        $params          Ek Stripe Payment parameters
-     * @param \EduardKombo\EkStripePaymentBundle\Contract\FirewallContract $firewall        Firewall contract
-     * @param SecurityContext                                              $securityContext Manage security
-     * @param dobject                                                      $doctrineOrm     Doctrine Orm 
+     * @param \EdouardKombo\EkStripePaymentBundle\Contract\SetGetContract   $setGetContract  setGetContract object
+     * @param array                                                         $params          Ek Stripe Payment parameters
+     * @param \EdouardKombo\EkStripePaymentBundle\Contract\FirewallContract $firewall        Firewall contract
+     * @param SecurityContext                                               $securityContext Manage security
+     * @param dobject                                                       $doctrineOrm     Doctrine Orm 
      */
-    public function __construct($setGetContract, $params, $firewall, $securityContext, $doctrineOrm)
+    public function __construct($setGetContract, $params, $firewall, 
+            $securityContext, $doctrineOrm)
     {
         $this->firewall         = $firewall;
         $this->setGetContract   = $setGetContract;
         $this->securityContext  = $securityContext;
         $this->em               = $doctrineOrm;
         
-        $this->setGetContract->cursor   = 'currentEnvironment';
-        $this->setGetContract->set($params['current_environment']);
-        $environment    = $this->setGetContract->currentEnvironment;
+        foreach ($params as $key => $val) {
+            $this->setGetContract->setParameter($key, $val);
+        }
+
+        $this->setGetContract->setParameter('subUrlsSubscriptions', 
+                $this->setGetContract->subUrlsCustomers);         
         
-        $this->setGetContract->cursor   = 'apiUrl';
-        $this->setGetContract->set($params['api_url']);
+        if ($this->setGetContract->defaultEnvironment === 'test') {
+            $secretKey      = $this->setGetContract->environmentsTestSecret;
+            $publishableKey = $this->setGetContract->environmentsTestPublishable;
+        } else {
+            $secretKey      = $this->setGetContract->environmentsLiveSecret;
+            $publishableKey = $this->setGetContract->environmentsLivePublishable;
+        }
         
-        $this->setGetContract->cursor   = 'apiVersion';
-        $this->setGetContract->set($params['api_version']);
-        
-        $this->setGetContract->cursor   = 'apiCheckoutUrl';
-        $this->setGetContract->set($params['api_checkout_url']);
-        
-        $this->setGetContract->cursor   = 'defaultCurrency';
-        $this->setGetContract->set($params['default_currency']);
-        
-        $this->setGetContract->cursor   = 'secretApiKey';
-        $secretApiKey   = $params['environments'][$environment]['secret_api'];
-        $this->setGetContract->set($secretApiKey);
-        
-        $this->setGetContract->cursor   = 'publishableApiKey';
-        $apiKey   = $params['environments'][$environment]['publishable_api'];
-        $this->setGetContract->set($apiKey); 
-        
-        $this->setGetContract->cursor   = 'chargesApiUrl';
-        $chargeUrl  = $params['api_url'] . $params['charges_suburl'];
-        $this->setGetContract->set($chargeUrl);
-        
-        $this->setGetContract->cursor   = 'customersApiUrl';
-        $customersUrl  = $params['api_url'] . $params['customers_suburl'];
-        $this->setGetContract->set($customersUrl);
-        
-        $this->setGetContract->cursor   = 'plansApiUrl';
-        $plansUrl  = $params['api_url'] . $params['plans_suburl'];
-        $this->setGetContract->set($plansUrl);
-        
-        $this->setGetContract->cursor   = 'subscriptionsApiUrl';
-        $subscriptionsUrl  = $params['api_url'] . $params['plans_suburl'];
-        $this->setGetContract->set($subscriptionsUrl);
-        
-        $this->setGetContract->cursor   = 'invoicesApiUrl';
-        $invoicesUrl  = $params['api_url'] . $params['invoices_suburl'];
-        $this->setGetContract->set($invoicesUrl);         
-        
+        $this->setGetContract->setProperties('secretApiKey', $secretKey);
+        $this->setGetContract->setProperties('publishableApiKey', $publishableKey);
+        $this->setHeaders($secretKey);               
+    }
+    
+    /**
+     * Set http headers to send to cUrl
+     */
+    private function setHeaders()
+    {
+        $secretApiKey   = $this->setGetContract->secretApiKey;
+        $apiVersion     = $this->setGetContract->apiVersion;   
+            
         $user_agent = [
             'bindings_version' => '1.0.0',
             'lang'             => 'php',
@@ -124,11 +109,11 @@ class StripeHelper
             'X-Stripe-Client-User-Agent: '    . json_encode($user_agent),
             'User-Agent: Stripe/v1 ScribeStripeBundle/' . '1.0.0',
             'Authorization: Bearer '          . $secretApiKey,
-            'Stripe-Version: '                . $this->setGetContract->apiVersion
-        ];        
-        $this->setGetContract->cursor   = 'headers';
-        $this->setGetContract->set($headers);                  
-    }
+            'Stripe-Version: '                . $apiVersion
+        ];
+        
+        $this->setGetContract->setProperties('headers', $headers);       
+    }    
     
     
     /**
@@ -159,13 +144,13 @@ class StripeHelper
      * 
      * @param array  $request        Requeest received from Stripe Api
      * @param string $customerId     Current customerId
-     * @param string $stripeProperty Stripe property to call
+     * @param string $subUrl         Current subUrl
      * 
      * @return mixed
      */
-    public function receiveStripeUserId($request, $customerId, $stripeProperty)
+    public function receiveStripeUserId($request, $customerId, $subUrl)
     {
-        if (($stripeProperty === 'customersApiUrl')) {
+        if (($subUrl === 'subUrlsCustomers')) {
             $result = (isset($request['id'])) ? $request['id'] : $customerId;
         } else {
             $result = false;

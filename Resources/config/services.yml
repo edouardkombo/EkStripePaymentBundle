@@ -1,9 +1,12 @@
 parameters:
     ek_stripe_payment.contract.firewall.class: EdouardKombo\EkStripePaymentBundle\Contract\FirewallContract     
-    ek_stripe_payment.contract.setget.class: EdouardKombo\EkStripePaymentBundle\Contract\SetGetContract
+    ek_stripe_payment.contract.setget.class: EdouardKombo\EkStripePaymentBundle\Contract\SetGetContract  
     ek_stripe_payment.contract.communication.class: EdouardKombo\EkStripePaymentBundle\Contract\CommunicationContract      
     ek_stripe_payment.helper.stripe.class: EdouardKombo\EkStripePaymentBundle\Helper\StripeHelper
-    ek_stripe_payment.controller.stripe.class: EdouardKombo\EkStripePaymentBundle\Controller\StripeController     
+    ek_stripe_payment.controller.stripe.add.class: EdouardKombo\EkStripePaymentBundle\Controller\StripeAddController
+    ek_stripe_payment.controller.stripe.update.class: EdouardKombo\EkStripePaymentBundle\Controller\StripeUpdateController
+    ek_stripe_payment.controller.stripe.retrieve.class: EdouardKombo\EkStripePaymentBundle\Controller\StripeRetrieveController
+    ek_stripe_payment.controller.stripe.delete.class: EdouardKombo\EkStripePaymentBundle\Controller\StripeDeleteController    
 
 services:
     ek_stripe_payment.contract.firewall:
@@ -13,11 +16,6 @@ services:
         class: %ek_stripe_payment.contract.setget.class%
         arguments:
             - @ek_stripe_payment.contract.firewall
-            
-    ek_stripe_payment.controller.stripe:
-        class: %ek_stripe_payment.controller.stripe.class%
-        arguments:
-            - @service_container
     
     ek_stripe_payment.helper.stripe:
         class: %ek_stripe_payment.helper.stripe.class%
@@ -31,4 +29,34 @@ services:
     ek_stripe_payment.contract.communication:
         class: %ek_stripe_payment.contract.communication.class%
         arguments:
-            - @ek_stripe_payment.helper.stripe             
+            - @ek_api_caller.contract.http
+            - @ek_stripe_payment.helper.stripe
+            - @ek_stripe_payment.contract.firewall
+
+    ek_stripe_payment.controller.stripe.add:
+        class: %ek_stripe_payment.controller.stripe.add.class%
+        arguments:
+            - @service_container
+            - @ek_stripe_payment.helper.stripe
+            - @ek_stripe_payment.contract.communication
+            
+    ek_stripe_payment.controller.stripe.update:
+        class: %ek_stripe_payment.controller.stripe.update.class%
+        arguments:
+            - @service_container
+            - @ek_stripe_payment.helper.stripe
+            - @ek_stripe_payment.contract.communication
+            
+    ek_stripe_payment.controller.stripe.retrieve:
+        class: %ek_stripe_payment.controller.stripe.retrieve.class%
+        arguments:
+            - @service_container
+            - @ek_stripe_payment.helper.stripe
+            - @ek_stripe_payment.contract.communication
+            
+    ek_stripe_payment.controller.stripe.delete:
+        class: %ek_stripe_payment.controller.stripe.retrieve.class%
+        arguments:
+            - @service_container
+            - @ek_stripe_payment.helper.stripe
+            - @ek_stripe_payment.contract.communication             
